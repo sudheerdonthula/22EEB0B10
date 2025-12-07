@@ -66,16 +66,40 @@ const parseFlipkartResponse = (payload) => {
                 else if (upperDesc.includes("KOTAK")) bankName = "KOTAK";
             }
 
-            // --- 5. Payment Instruments ---
+            // --- 5. Payment Instruments (FIXED LOGIC) ---
             const instruments = [];
             const upperText = (titleText + " " + descText).toUpperCase();
 
-            if (upperText.includes("EMI")) instruments.push("EMI");
-            if (upperText.includes("CREDIT CARD") || upperText.includes("CREDIT")) instruments.push("CREDIT_CARD");
-            if (upperText.includes("DEBIT CARD") || upperText.includes("DEBIT")) instruments.push("DEBIT_CARD");
-            if (upperText.includes("UPI") || upperText.includes("PAYTM") || upperText.includes("BHIM") || upperText.includes("MOBIKWIK")) instruments.push("UPI");
+            // Check for "Non-EMI" specifically (e.g., "Credit Card Non-EMI Transaction")
+            const isNonEmi = upperText.includes("NON-EMI");
+
+            // LOGIC FLOW:
+            // 1. If it says "EMI" (and is NOT "Non-EMI"), it is strictly an EMI offer.
+            // 2. Otherwise, check for Credit/Debit cards (Regular Swipe).
             
-            if (instruments.length === 0) instruments.push("CREDIT_CARD"); 
+            if (upperText.includes("EMI") && !isNonEmi) {
+                // It is an EMI offer. Do NOT add "CREDIT_CARD" here.
+                instruments.push("EMI");
+            } 
+            else {
+                // It is a Regular Swipe offer (either generic or explicitly Non-EMI)
+                if (upperText.includes("CREDIT CARD") || upperText.includes("CREDIT")) {
+                    instruments.push("CREDIT_CARD");
+                }
+                if (upperText.includes("DEBIT CARD") || upperText.includes("DEBIT")) {
+                    instruments.push("DEBIT_CARD");
+                }
+            }
+
+            // UPI is usually distinct, so we can check it independently
+            if (upperText.includes("UPI") || upperText.includes("PAYTM") || upperText.includes("BHIM") || upperText.includes("MOBIKWIK")) {
+                instruments.push("UPI");
+            }
+            
+            // Fallback: If absolutely no instrument was detected, default to CREDIT_CARD
+            if (instruments.length === 0) {
+                instruments.push("CREDIT_CARD"); 
+            }
 
             identifiedOffers.push({
                 offerId: offerId,
@@ -84,7 +108,7 @@ const parseFlipkartResponse = (payload) => {
                 discountType: discountType,
                 discountValue: discountType === 'PERCENTAGE' ? discountValue : flatAmount,
                 maxDiscount: maxDiscount,
-                minOrderValue: minOrderValue, // Now guaranteed to be a valid Number
+                minOrderValue: minOrderValue,
                 paymentInstruments: instruments
             });
         }

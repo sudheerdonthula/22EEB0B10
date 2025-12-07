@@ -1525,6 +1525,9 @@ MongoDB: Chosen for its flexibility. Since we are reverse-engineering a third-pa
 
 Upsert Logic: The ingestion API uses updateOne with { upsert: true }. This prevents duplicates by updating existing offers (based on their unique Flipkart ID) rather than creating new entries every time.This would also directly help in making a count of the newly entered offers in the database and return as a response for this particular post request.
 
+Mentioning Payment instrument as an array:
+Multi-Card Offers: An offer might say "10% off on Axis Credit and Debit Cards". In this case, your parser will push both "CREDIT_CARD" and "DEBIT_CARD" into the array. You need an array to store both tags for a single offer.
+
 ### 3. Bonus: Payment Instruments
 I implemented a dynamic tagger that scans the offer description for keywords like "EMI", "Credit Card", or "UPI" to automatically populate the paymentInstruments array. This allows for precise filtering in the calculation API.
 
